@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ECom.Shared/ECom.Shared.csproj" />
+    <Project Path="src/ECom.Gateway/ECom.Gateway.csproj" />
+    <Project Path="src/ECom.Auth.Api/ECom.Auth.Api.csproj" />
+    <Project Path="src/ECom.Product.Api/ECom.Product.Api.csproj" />
+    <Project Path="src/ECom.Cart.Api/ECom.Cart.Api.csproj" />
+    <Project Path="src/ECom.Order.Api/ECom.Order.Api.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ECom.Auth.UnitTests/ECom.Auth.UnitTests.csproj" />
+    <Project Path="tests/ECom.Product.UnitTests/ECom.Product.UnitTests.csproj" />
+    <Project Path="tests/ECom.Cart.UnitTests/ECom.Cart.UnitTests.csproj" />
+    <Project Path="tests/ECom.Order.UnitTests/ECom.Order.UnitTests.csproj" />
+  </Folder>
+</Solution>

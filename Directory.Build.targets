@@ -1,0 +1,6 @@
+<Project>
+  <!-- Local-only settings (may contain keys) must never ship in a publish/deploy package. -->
+  <ItemGroup>
+    <Content Update="appsettings.Development.json;appsettings.Development.example.json" CopyToPublishDirectory="Never" />
+  </ItemGroup>
+</Project>

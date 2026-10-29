@@ -1,0 +1,73 @@
+# Build output
+bin/
+obj/
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+!packages/repositories.config
+.nuget/
+nuget.config
+
+# User-specific files
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+.vs/
+
+# Rider
+.idea/
+*.sln.iml
+
+# VS Code
+.vscode/
+
+# Publish output
+publish/
+**/publish/
+
+# Test results
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+# Logs
+*.log
+logs/
+
+# User secrets (never commit)
+**/secrets.json
+**/appsettings.*.json
+!**/appsettings.json
+# appsettings.Development.json holds local keys and stays untracked; commit the placeholder template instead.
+!**/appsettings.Development.example.json
+
+# Environment files
+.env
+.env.*
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temp / scratch
+*.tmp
+*.temp
+
+
+.postman/
+E-Commerce Backend*.yaml
+E-Commerce Backend/
+endpoints.md
+postman/
+ARCHITECTURE.md
+
+# Logs
+logs/
+**/logs/
+TestResults/
+
