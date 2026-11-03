@@ -27,6 +27,32 @@
       ]
     },
     {
+      "UpstreamPathTemplate": "/api/auth/refresh",
+      "UpstreamHttpMethod": [
+        "POST"
+      ],
+      "DownstreamPathTemplate": "/api/auth/refresh",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "ecom-auth-api.example.internal", "Port": 443
+        }
+      ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/auth/logout",
+      "UpstreamHttpMethod": [
+        "POST"
+      ],
+      "DownstreamPathTemplate": "/api/auth/logout",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "ecom-auth-api.example.internal", "Port": 443
+        }
+      ]
+    },
+    {
       "UpstreamPathTemplate": "/api/auth/me",
       "UpstreamHttpMethod": [
         "GET"

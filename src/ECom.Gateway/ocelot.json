@@ -29,6 +29,34 @@
       ]
     },
     {
+      "UpstreamPathTemplate": "/api/auth/refresh",
+      "UpstreamHttpMethod": [
+        "POST"
+      ],
+      "DownstreamPathTemplate": "/api/auth/refresh",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5101
+        }
+      ]
+    },
+    {
+      "UpstreamPathTemplate": "/api/auth/logout",
+      "UpstreamHttpMethod": [
+        "POST"
+      ],
+      "DownstreamPathTemplate": "/api/auth/logout",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5101
+        }
+      ]
+    },
+    {
       "UpstreamPathTemplate": "/api/auth/me",
       "UpstreamHttpMethod": [
         "GET"

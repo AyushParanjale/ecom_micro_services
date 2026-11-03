@@ -40,6 +40,32 @@ public sealed class AuthController : ControllerBase
         return Ok(response);
     }
 
+    [HttpPost("refresh")]
+    [AllowAnonymous]
+    [ProducesResponseType<LoginResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> Refresh(
+        [FromBody] RefreshRequest request,
+        CancellationToken cancellationToken)
+    {
+        var response = await _authService.RefreshAsync(request, cancellationToken);
+        return Ok(response);
+    }
+
+    // AllowAnonymous: the access token may already have expired when the client logs out.
+    [HttpPost("logout")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Logout(
+        [FromBody] LogoutRequest request,
+        CancellationToken cancellationToken)
+    {
+        await _authService.LogoutAsync(request, cancellationToken);
+        return NoContent();
+    }
+
     [HttpGet("me")]
     [Authorize]
     [ProducesResponseType<CurrentUserResponse>(StatusCodes.Status200OK)]

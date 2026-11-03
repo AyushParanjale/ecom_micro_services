@@ -10,9 +10,12 @@ public sealed class AuthDbContext : IdentityDbContext<ApplicationUser, IdentityR
 {
     public AuthDbContext(DbContextOptions<AuthDbContext> options) : base(options) { }
 
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
         builder.ApplyConfiguration(new ApplicationUserConfiguration());
+        builder.ApplyConfiguration(new RefreshTokenConfiguration());
     }
 }

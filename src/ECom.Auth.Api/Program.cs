@@ -1,5 +1,6 @@
 using ECom.Auth.Api.Data;
 using ECom.Auth.Api.Entities;
+using ECom.Auth.Api.Repositories;
 using ECom.Auth.Api.Services;
 using ECom.Shared.Auth;
 using ECom.Shared.Hosting;
@@ -31,6 +32,7 @@ await EComHostingExtensions.RunEComAsync(async () =>
 
     builder.Services.AddEComJwtAuthentication(builder.Configuration);
 
+    builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
     builder.Services.AddScoped<ITokenService, TokenService>();
     builder.Services.AddScoped<IAuthService, AuthService>();
     builder.Services.AddScoped<AdminSeedService>();

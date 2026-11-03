@@ -20,6 +20,7 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             NotFoundException nfe => (StatusCodes.Status404NotFound, "Not Found", nfe.Message),
             ConflictException ce => (StatusCodes.Status409Conflict, ce.ConflictTitle ?? "Conflict", ce.Message),
             InvalidCredentialsException => (StatusCodes.Status401Unauthorized, "Unauthorized", "Invalid email or password."),
+            InvalidRefreshTokenException => (StatusCodes.Status401Unauthorized, "Unauthorized", "Invalid or expired refresh token."),
             DomainException de => (StatusCodes.Status400BadRequest, "Bad Request", de.Message),
             GatewayException => (StatusCodes.Status503ServiceUnavailable, "Payment service unavailable",
                 "The payment service is temporarily unavailable. Please retry with the same idempotency key."),

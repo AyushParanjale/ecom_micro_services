@@ -5,13 +5,17 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 public static class JwtAuthenticationExtensions
 {
+    private const int JweSeparatorCount = 4; // header.encryptedKey.iv.ciphertext.tag
+
     /// <summary>
     /// Registers JWT bearer validation shared by every service and the gateway.
-    /// Issuer, audience and signing key must be identical everywhere.
+    /// Issuer, audience, signing key and encryption key must be identical everywhere.
+    /// Access tokens are JWEs (signed, then encrypted); plain signed JWTs are rejected.
     /// </summary>
     /// <param name="signalRHubPath">When set, the token may also be supplied as the
     /// <c>access_token</c> query-string parameter for requests to this path (SignalR WebSockets).</param>
@@ -20,45 +24,46 @@ public static class JwtAuthenticationExtensions
         IConfiguration configuration,
         string? signalRHubPath = null)
     {
-        var jwtSection = configuration.GetSection(JwtOptions.SectionName);
         services.AddOptions<JwtOptions>()
-            .Bind(jwtSection)
+            .Bind(configuration.GetSection(JwtOptions.SectionName))
             .Validate(o =>
                 !string.IsNullOrWhiteSpace(o.Issuer) &&
                 !string.IsNullOrWhiteSpace(o.Audience) &&
                 !string.IsNullOrWhiteSpace(o.SigningKey) &&
                 o.SigningKey.Length >= 32 &&
-                o.ExpirationMinutes > 0,
-                "Jwt configuration is invalid. Ensure Issuer, Audience, SigningKey (≥32 chars), and ExpirationMinutes (>0) are set.")
+                o.TryGetEncryptionKeyBytes() is not null &&
+                o.ExpirationMinutes > 0 &&
+                o.RefreshTokenExpirationDays > 0,
+                "Jwt configuration is invalid. Ensure Issuer, Audience, SigningKey (≥32 chars), EncryptionKey (base64 of exactly 32 bytes), ExpirationMinutes (>0), and RefreshTokenExpirationDays (>0) are set.")
             .ValidateOnStart();
 
-        var jwtOptions = jwtSection.Get<JwtOptions>() ?? new JwtOptions();
-
-        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options =>
+        // Configured at options-resolution time so JwtOptions stays the single source of truth.
+        services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+            .Configure<IOptions<JwtOptions>>((options, jwtOptions) =>
             {
+                var jwt = jwtOptions.Value;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
                     ValidateAudience = true,
                     ValidateIssuerSigningKey = true,
                     ValidateLifetime = true,
-                    ValidIssuer = jwtOptions.Issuer,
-                    ValidAudience = jwtOptions.Audience,
-                    IssuerSigningKey = string.IsNullOrWhiteSpace(jwtOptions.SigningKey)
-                        ? new SymmetricSecurityKey(new byte[32])
-                        : new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SigningKey)),
+                    ValidIssuer = jwt.Issuer,
+                    ValidAudience = jwt.Audience,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.SigningKey)),
+                    // Access tokens are JWEs: decrypt with this key before validating the inner signed JWT.
+                    TokenDecryptionKey = new SymmetricSecurityKey(jwt.TryGetEncryptionKeyBytes()!),
                     ClockSkew = TimeSpan.FromSeconds(30),
                     RoleClaimType = ClaimTypes.Role,
                 };
 
-                if (!string.IsNullOrWhiteSpace(signalRHubPath))
+                options.Events = new JwtBearerEvents
                 {
-                    // SignalR WebSocket connections cannot send HTTP headers, so the JWT is passed
-                    // as a query-string parameter. Accept it only for the hub path.
-                    options.Events = new JwtBearerEvents
+                    OnMessageReceived = context =>
                     {
-                        OnMessageReceived = context =>
+                        // SignalR WebSocket connections cannot send HTTP headers, so the token is passed
+                        // as a query-string parameter. Accept it only for the hub path.
+                        if (!string.IsNullOrWhiteSpace(signalRHubPath))
                         {
                             var accessToken = context.Request.Query["access_token"];
                             if (!string.IsNullOrEmpty(accessToken) &&
@@ -66,11 +71,29 @@ public static class JwtAuthenticationExtensions
                             {
                                 context.Token = accessToken;
                             }
-                            return Task.CompletedTask;
                         }
-                    };
-                }
+
+                        // TokenDecryptionKey lets the handler decrypt JWEs but does not require them, so a
+                        // plain signed JWT would otherwise still validate. Insist on the 5-segment JWE shape.
+                        var token = context.Token;
+                        if (string.IsNullOrEmpty(token))
+                        {
+                            const string prefix = "Bearer ";
+                            var header = context.Request.Headers.Authorization.ToString();
+                            if (header.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                                token = header[prefix.Length..].Trim();
+                        }
+
+                        if (!string.IsNullOrEmpty(token) && token.Count(c => c == '.') != JweSeparatorCount)
+                            context.Fail("Access tokens must be encrypted (JWE).");
+
+                        return Task.CompletedTask;
+                    }
+                };
             });
+
+        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer();
 
         services.AddAuthorizationBuilder()
             .AddPolicy(Policies.AdminOnly, p => p.RequireRole(Roles.Admin));
