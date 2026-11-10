@@ -1,5 +1,6 @@
 using ECom.Shared.Auth;
 using ECom.Shared.Hosting;
+using Microsoft.AspNetCore.Cors.Infrastructure;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
 using Serilog;
@@ -17,14 +18,23 @@ await EComHostingExtensions.RunEComAsync(async () =>
     // Same issuer/audience/key as every service; routes with AuthenticationOptions are validated here.
     builder.Services.AddEComJwtAuthentication(builder.Configuration);
 
-    var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-        ?? ["http://localhost:5173"];
-    builder.Services.AddCors(options =>
-        options.AddDefaultPolicy(policy =>
-            policy.WithOrigins(allowedOrigins)
-                  .AllowAnyHeader()
-                  .AllowAnyMethod()
-                  .AllowCredentials()));
+    builder.Services.AddCors();
+    // Bound from configuration at resolve time so environment variables
+    // (e.g. Cors__AllowedOrigins__0) and test overrides are honoured.
+    builder.Services.AddOptions<CorsOptions>()
+        .Configure<IConfiguration>((options, configuration) =>
+        {
+            var allowedOrigins = (configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [])
+                .Where(origin => !string.IsNullOrWhiteSpace(origin))
+                .Select(origin => origin.Trim().TrimEnd('/'))
+                .ToArray();
+
+            options.AddDefaultPolicy(policy =>
+                policy.WithOrigins(allowedOrigins)
+                      .AllowAnyHeader()
+                      .AllowAnyMethod()
+                      .AllowCredentials());
+        });
 
     builder.Services.AddHealthChecks();
     builder.Services.AddOcelot(builder.Configuration);
