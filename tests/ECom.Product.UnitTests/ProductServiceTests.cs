@@ -36,8 +36,8 @@ public sealed class ProductServiceTests
     private static Mock<IProductRepository> EmptyRepoMock()
     {
         var mock = new Mock<IProductRepository>();
-        mock.Setup(r => r.GetAvailableAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Product>().AsReadOnly());
+        mock.Setup(r => r.GetAvailablePageAsync(It.IsAny<ProductQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((new List<Product>().AsReadOnly(), 0));
         mock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Product?)null);
         return mock;
@@ -134,36 +134,70 @@ public sealed class ProductServiceTests
     public async Task GetProducts_ReturnsOnlyInStockProducts()
     {
         var mock = EmptyRepoMock();
-        mock.Setup(r => r.GetAvailableAsync(null, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Product> { MakeProduct(stock: 5) }.AsReadOnly());
+        mock.Setup(r => r.GetAvailablePageAsync(It.IsAny<ProductQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((new List<Product> { MakeProduct(stock: 5) }.AsReadOnly(), 1));
 
         var svc = CreateSvc(mock.Object);
-        var result = await svc.GetProductsAsync(null);
+        var result = await svc.GetProductsAsync(new ProductQuery());
 
-        Assert.HasCount(1, result);
+        Assert.HasCount(1, result.Items);
+        Assert.AreEqual(1, result.TotalCount);
     }
 
     [TestMethod]
-    public async Task GetProducts_NoMatches_ReturnsEmptyList()
+    public async Task GetProducts_NoMatches_ReturnsEmptyPage()
     {
         var svc = CreateSvc(EmptyRepoMock().Object);
-        var result = await svc.GetProductsAsync(null);
-        Assert.IsEmpty(result);
+        var result = await svc.GetProductsAsync(new ProductQuery());
+        Assert.IsEmpty(result.Items);
+        Assert.AreEqual(0, result.TotalCount);
+        Assert.AreEqual(0, result.TotalPages);
     }
 
     [TestMethod]
-    public async Task GetProducts_CategoryFilter_PassesTrimmedCategoryToRepo()
+    public async Task GetProducts_PassesQueryToRepo()
     {
         var mock = EmptyRepoMock();
-        string? capturedCategory = null;
-        mock.Setup(r => r.GetAvailableAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
-            .Callback<string?, CancellationToken>((c, _) => capturedCategory = c)
-            .ReturnsAsync(new List<Product>().AsReadOnly());
+        ProductQuery? captured = null;
+        mock.Setup(r => r.GetAvailablePageAsync(It.IsAny<ProductQuery>(), It.IsAny<CancellationToken>()))
+            .Callback<ProductQuery, CancellationToken>((q, _) => captured = q)
+            .ReturnsAsync((new List<Product>().AsReadOnly(), 0));
+
+        var query = new ProductQuery { Category = "Electronics", Search = "phone", Page = 2, PageSize = 5 };
+        var svc = CreateSvc(mock.Object);
+        await svc.GetProductsAsync(query);
+
+        Assert.AreSame(query, captured);
+    }
+
+    [TestMethod]
+    public async Task GetProducts_ComputesPagingMetadata()
+    {
+        var mock = EmptyRepoMock();
+        mock.Setup(r => r.GetAvailablePageAsync(It.IsAny<ProductQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((new List<Product> { MakeProduct("A"), MakeProduct("B") }.AsReadOnly(), 12));
 
         var svc = CreateSvc(mock.Object);
-        await svc.GetProductsAsync("  Electronics  ");
+        var result = await svc.GetProductsAsync(new ProductQuery { Page = 3, PageSize = 5 });
 
-        Assert.AreEqual("Electronics", capturedCategory);
+        Assert.AreEqual(3, result.Page);
+        Assert.AreEqual(5, result.PageSize);
+        Assert.AreEqual(12, result.TotalCount);
+        Assert.AreEqual(3, result.TotalPages);
+        Assert.HasCount(2, result.Items);
+    }
+
+    [TestMethod]
+    public async Task GetCategories_ReturnsRepoCategories()
+    {
+        var mock = EmptyRepoMock();
+        mock.Setup(r => r.GetAvailableCategoriesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<string> { "Books", "Electronics" }.AsReadOnly());
+
+        var svc = CreateSvc(mock.Object);
+        var result = await svc.GetCategoriesAsync();
+
+        CollectionAssert.AreEqual(new[] { "Books", "Electronics" }, result.ToArray());
     }
 
     // --- GetProductById ---
@@ -223,7 +257,7 @@ public sealed class ProductServiceTests
         Assert.IsTrue(result.Any(r => r.Id == outOfStock.Id && r.StockQuantity == 0));
         Assert.IsNotNull(capturedIds);
         Assert.HasCount(3, capturedIds!);
-        mock.Verify(r => r.GetAvailableAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+        mock.Verify(r => r.GetAvailablePageAsync(It.IsAny<ProductQuery>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     // --- Update ---

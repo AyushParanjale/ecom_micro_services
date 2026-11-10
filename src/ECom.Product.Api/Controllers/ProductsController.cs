@@ -30,13 +30,23 @@ public sealed class ProductsController : ControllerBase
 
     [HttpGet]
     [AllowAnonymous]
-    [ProducesResponseType<IReadOnlyList<ProductResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<PagedResponse<ProductResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetAll(
-        [FromQuery] string? category,
+        [FromQuery] ProductQuery query,
         CancellationToken cancellationToken)
     {
-        var products = await _productService.GetProductsAsync(category, cancellationToken);
+        var products = await _productService.GetProductsAsync(query, cancellationToken);
         return Ok(products);
+    }
+
+    [HttpGet("categories")]
+    [AllowAnonymous]
+    [ProducesResponseType<IReadOnlyList<string>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetCategories(CancellationToken cancellationToken)
+    {
+        var categories = await _productService.GetCategoriesAsync(cancellationToken);
+        return Ok(categories);
     }
 
     [HttpGet("{id:guid}")]

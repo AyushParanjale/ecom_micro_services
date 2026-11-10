@@ -42,36 +42,55 @@ public sealed class ProductService : IProductService
         return ToResponse(product);
     }
 
-    public async Task<IReadOnlyList<ProductResponse>> GetProductsAsync(string? category, CancellationToken cancellationToken = default)
+    public async Task<PagedResponse<ProductResponse>> GetProductsAsync(ProductQuery query, CancellationToken cancellationToken = default)
     {
         var listExpiry = TimeSpan.FromMinutes(_cachingOptions.ProductListExpirationMinutes);
-        var normalizedCategory = ProductCacheKeys.NormalizeCategory(category);
+        var version = await GetListVersionAsync(listExpiry, cancellationToken);
+        var cacheKey = ProductCacheKeys.List(version, query);
 
-        // Obtain (or create) the list version token. Invalidation removes this key,
-        // causing all subsequent list requests to use a fresh version.
-        var version = await _cache.GetOrCreateAsync(
-            ProductCacheKeys.VersionKey,
-            _ => Task.FromResult(DateTimeOffset.UtcNow.Ticks.ToString()),
-            listExpiry,
-            cancellationToken);
-
-        var cacheKey = string.IsNullOrEmpty(normalizedCategory)
-            ? ProductCacheKeys.ListAll(version)
-            : ProductCacheKeys.ListByCategory(version, normalizedCategory);
-
-        var cached = await _cache.GetAsync<IReadOnlyList<ProductResponse>>(cacheKey, cancellationToken);
+        var cached = await _cache.GetAsync<PagedResponse<ProductResponse>>(cacheKey, cancellationToken);
         if (cached is not null)
         {
             _logger.LogDebug("Cache hit for product list key {Key}", cacheKey);
             return cached;
         }
 
-        var products = await _repo.GetAvailableAsync(category?.Trim(), cancellationToken);
-        var result = products.Select(ToResponse).ToList().AsReadOnly();
+        var (products, totalCount) = await _repo.GetAvailablePageAsync(query, cancellationToken);
+        var totalPages = (int)Math.Ceiling(totalCount / (double)query.PageSize);
+        var result = new PagedResponse<ProductResponse>(
+            products.Select(ToResponse).ToList().AsReadOnly(),
+            query.Page,
+            query.PageSize,
+            totalCount,
+            totalPages);
 
         await _cache.SetAsync(cacheKey, result, listExpiry, cancellationToken);
         return result;
     }
+
+    public async Task<IReadOnlyList<string>> GetCategoriesAsync(CancellationToken cancellationToken = default)
+    {
+        var listExpiry = TimeSpan.FromMinutes(_cachingOptions.ProductListExpirationMinutes);
+        var version = await GetListVersionAsync(listExpiry, cancellationToken);
+        var cacheKey = ProductCacheKeys.Categories(version);
+
+        var cached = await _cache.GetAsync<IReadOnlyList<string>>(cacheKey, cancellationToken);
+        if (cached is not null)
+            return cached;
+
+        var categories = await _repo.GetAvailableCategoriesAsync(cancellationToken);
+        await _cache.SetAsync(cacheKey, categories, listExpiry, cancellationToken);
+        return categories;
+    }
+
+    // Obtain (or create) the list version token. Invalidation removes this key,
+    // causing all subsequent list requests to use a fresh version.
+    private Task<string> GetListVersionAsync(TimeSpan expiry, CancellationToken cancellationToken) =>
+        _cache.GetOrCreateAsync(
+            ProductCacheKeys.VersionKey,
+            _ => Task.FromResult(DateTimeOffset.UtcNow.Ticks.ToString()),
+            expiry,
+            cancellationToken);
 
     public async Task<ProductResponse> GetProductByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {

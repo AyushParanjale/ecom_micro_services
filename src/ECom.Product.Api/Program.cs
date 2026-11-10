@@ -39,7 +39,8 @@ await EComHostingExtensions.RunEComAsync(async () =>
 
     await app.MigrateDatabaseAsync<ProductDbContext>();
 
-    if (app.Environment.IsDevelopment())
+    // Seeding is idempotent; it runs in Development by default and elsewhere when Seed:Products=true.
+    if (app.Configuration.GetValue("Seed:Products", app.Environment.IsDevelopment()))
     {
         using var scope = app.Services.CreateScope();
         try

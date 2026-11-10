@@ -1,6 +1,7 @@
 namespace ECom.Product.Api.Repositories;
 
 using ECom.Product.Api.Data;
+using ECom.Product.Api.DTOs;
 using ECom.Product.Api.Entities;
 using ECom.Shared.Exceptions;
 using Microsoft.EntityFrameworkCore;
@@ -16,23 +17,62 @@ public sealed class ProductRepository : IProductRepository
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
 
-    public async Task<IReadOnlyList<Product>> GetAvailableAsync(string? category, CancellationToken cancellationToken = default)
+    public async Task<(IReadOnlyList<Product> Items, int TotalCount)> GetAvailablePageAsync(
+        ProductQuery query,
+        CancellationToken cancellationToken = default)
     {
-        var query = _context.Products
+        var products = _context.Products
             .AsNoTracking()
             .Where(p => p.StockQuantity > 0);
 
-        if (!string.IsNullOrWhiteSpace(category))
+        if (!string.IsNullOrWhiteSpace(query.Category))
         {
-            var trimmed = category.Trim();
-            query = query.Where(p => p.Category.ToLower() == trimmed.ToLower());
+            var category = query.Category.Trim().ToLower();
+            products = products.Where(p => p.Category.ToLower() == category);
         }
 
-        return await query
-            .OrderBy(p => p.Name)
+        if (!string.IsNullOrWhiteSpace(query.Search))
+        {
+            var term = query.Search.Trim().ToLower();
+            products = products.Where(p =>
+                p.Name.ToLower().Contains(term) ||
+                p.Description.ToLower().Contains(term) ||
+                p.Category.ToLower().Contains(term));
+        }
+
+        if (query.MinPrice is not null)
+            products = products.Where(p => p.Price >= query.MinPrice);
+
+        if (query.MaxPrice is not null)
+            products = products.Where(p => p.Price <= query.MaxPrice);
+
+        var totalCount = await products.CountAsync(cancellationToken);
+
+        var ordered = (query.SortByPrice, query.SortDescending) switch
+        {
+            (true, false) => products.OrderBy(p => p.Price).ThenBy(p => p.Name),
+            (true, true) => products.OrderByDescending(p => p.Price).ThenBy(p => p.Name),
+            (false, true) => products.OrderByDescending(p => p.Name),
+            _ => products.OrderBy(p => p.Name),
+        };
+
+        var items = await ordered
             .ThenBy(p => p.Id)
+            .Skip((query.Page - 1) * query.PageSize)
+            .Take(query.PageSize)
             .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
     }
+
+    public async Task<IReadOnlyList<string>> GetAvailableCategoriesAsync(CancellationToken cancellationToken = default) =>
+        await _context.Products
+            .AsNoTracking()
+            .Where(p => p.StockQuantity > 0)
+            .Select(p => p.Category)
+            .Distinct()
+            .OrderBy(c => c)
+            .ToListAsync(cancellationToken);
 
     public async Task<IReadOnlyList<Product>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default)
     {

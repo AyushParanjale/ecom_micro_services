@@ -21,8 +21,8 @@ public sealed class ProductServiceCachingTests
     private static Mock<IProductRepository> EmptyRepoMock()
     {
         var mock = new Mock<IProductRepository>();
-        mock.Setup(r => r.GetAvailableAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Product>().AsReadOnly());
+        mock.Setup(r => r.GetAvailablePageAsync(It.IsAny<ProductQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((new List<Product>().AsReadOnly(), 0));
         mock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Product?)null);
         return mock;
@@ -38,8 +38,8 @@ public sealed class ProductServiceCachingTests
     {
         var repoMock = EmptyRepoMock();
         var products = new List<Product> { new("Widget", "Desc", 9.99m, "Cat", 5, null) };
-        repoMock.Setup(r => r.GetAvailableAsync(null, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(products.AsReadOnly());
+        repoMock.Setup(r => r.GetAvailablePageAsync(It.IsAny<ProductQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((products.AsReadOnly(), products.Count));
 
         var cacheMock = new Mock<ICacheService>();
 
@@ -53,22 +53,22 @@ public sealed class ProductServiceCachingTests
                 (_, factory, _, ct) => factory(ct));
 
         // List key miss
-        cacheMock.Setup(c => c.GetAsync<IReadOnlyList<ProductResponse>>(
+        cacheMock.Setup(c => c.GetAsync<PagedResponse<ProductResponse>>(
                 It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((IReadOnlyList<ProductResponse>?)null);
+            .ReturnsAsync((PagedResponse<ProductResponse>?)null);
 
-        cacheMock.Setup(c => c.SetAsync<IReadOnlyList<ProductResponse>>(
-                It.IsAny<string>(), It.IsAny<IReadOnlyList<ProductResponse>>(),
+        cacheMock.Setup(c => c.SetAsync<PagedResponse<ProductResponse>>(
+                It.IsAny<string>(), It.IsAny<PagedResponse<ProductResponse>>(),
                 It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         var svc = CreateSvc(repoMock.Object, cacheMock.Object);
-        var result = await svc.GetProductsAsync(null);
+        var result = await svc.GetProductsAsync(new ProductQuery());
 
-        Assert.HasCount(1, result);
-        repoMock.Verify(r => r.GetAvailableAsync(null, It.IsAny<CancellationToken>()), Times.Once);
-        cacheMock.Verify(c => c.SetAsync<IReadOnlyList<ProductResponse>>(
-            It.IsAny<string>(), It.IsAny<IReadOnlyList<ProductResponse>>(),
+        Assert.HasCount(1, result.Items);
+        repoMock.Verify(r => r.GetAvailablePageAsync(It.IsAny<ProductQuery>(), It.IsAny<CancellationToken>()), Times.Once);
+        cacheMock.Verify(c => c.SetAsync<PagedResponse<ProductResponse>>(
+            It.IsAny<string>(), It.IsAny<PagedResponse<ProductResponse>>(),
             It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -76,10 +76,12 @@ public sealed class ProductServiceCachingTests
     public async Task GetProducts_CacheHit_DoesNotHitRepo()
     {
         var repoMock = EmptyRepoMock();
-        var cachedList = new List<ProductResponse> { MakeResponse() }.AsReadOnly();
+        var cachedPage = new PagedResponse<ProductResponse>(
+            new List<ProductResponse> { MakeResponse() }.AsReadOnly(), 1, ProductQuery.DefaultPageSize, 1, 1);
 
         var cacheMock = new Mock<ICacheService>();
         const string version = "test-version";
+        var query = new ProductQuery();
 
         cacheMock.Setup(c => c.GetOrCreateAsync<string>(
                 ProductCacheKeys.VersionKey,
@@ -88,15 +90,47 @@ public sealed class ProductServiceCachingTests
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(version);
 
-        cacheMock.Setup(c => c.GetAsync<IReadOnlyList<ProductResponse>>(
-                ProductCacheKeys.ListAll(version), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(cachedList);
+        cacheMock.Setup(c => c.GetAsync<PagedResponse<ProductResponse>>(
+                ProductCacheKeys.List(version, query), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(cachedPage);
 
         var svc = CreateSvc(repoMock.Object, cacheMock.Object);
-        var result = await svc.GetProductsAsync(null);
+        var result = await svc.GetProductsAsync(query);
 
-        Assert.AreSame(cachedList, result);
-        repoMock.Verify(r => r.GetAvailableAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+        Assert.AreSame(cachedPage, result);
+        repoMock.Verify(r => r.GetAvailablePageAsync(It.IsAny<ProductQuery>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [TestMethod]
+    public void ListCacheKey_DiffersPerQueryDimension()
+    {
+        const string version = "v";
+        var baseQuery = new ProductQuery();
+        var variants = new[]
+        {
+            baseQuery,
+            baseQuery with { Search = "phone" },
+            baseQuery with { Category = "Books" },
+            baseQuery with { MinPrice = 10m },
+            baseQuery with { MaxPrice = 10m },
+            baseQuery with { SortBy = "price" },
+            baseQuery with { SortDirection = "desc" },
+            baseQuery with { Page = 2 },
+            baseQuery with { PageSize = 24 },
+        };
+
+        var keys = variants.Select(q => ProductCacheKeys.List(version, q)).ToList();
+
+        Assert.HasCount(variants.Length, keys.Distinct());
+    }
+
+    [TestMethod]
+    public void ListCacheKey_IsCaseAndWhitespaceInsensitiveForTextFilters()
+    {
+        var a = ProductCacheKeys.List("v", new ProductQuery { Search = "  Phone ", Category = "BOOKS" });
+        var b = ProductCacheKeys.List("v", new ProductQuery { Search = "phone", Category = "books" });
+
+        Assert.AreEqual(a, b);
     }
 
     // --- GetProductById detail cache ---
@@ -236,8 +270,8 @@ public sealed class ProductServiceCachingTests
     {
         var products = new List<Product> { new("Widget", "Desc", 9.99m, "Cat", 5, null) };
         var repoMock = EmptyRepoMock();
-        repoMock.Setup(r => r.GetAvailableAsync(null, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(products.AsReadOnly());
+        repoMock.Setup(r => r.GetAvailablePageAsync(It.IsAny<ProductQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((products.AsReadOnly(), products.Count));
 
         // Cache throws on every call — service should still return DB result
         var cacheMock = new Mock<ICacheService>();
@@ -253,6 +287,6 @@ public sealed class ProductServiceCachingTests
         // is not caught at that level; the list-hit check would not be reached.
         // This validates the cache error is NOT silently swallowed at GetProductsAsync level.
         await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
-            svc.GetProductsAsync(null));
+            svc.GetProductsAsync(new ProductQuery()));
     }
 }

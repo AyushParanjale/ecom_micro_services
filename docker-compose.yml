@@ -34,6 +34,10 @@ services:
     env_file:
       - path: src/ECom.Product.Api/.env.production
         format: raw
+    environment:
+      <<: *env
+      # Idempotent: inserts missing seed products and backfills missing image URLs only.
+      Seed__Products: "true"
     ports:
       - "8002:8080"
 

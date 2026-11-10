@@ -44,6 +44,7 @@ pwsh -File scripts/Export-ContainerEnvironment.ps1 -Service Cart,Gateway -Force 
 - `Jwt:Issuer`, `Jwt:Audience`, `Jwt:SigningKey` and `Jwt:EncryptionKey` must be identical across all services; the script fails otherwise.
 - `Production` replaces the SQL connection strings, `ServiceUrls:*` (hosts from `ocelot.Production.json`) and the gateway's `Cors:AllowedOrigins` with placeholders to fill in. Remove `AdminSeed__*` from the auth-api file after bootstrap.
 - `Local` keeps `ServiceUrls` on `localhost`; change them to reachable hosts when running in containers.
+- Product catalogue seed: runs at product-api startup in `Development`, or anywhere when `Seed__Products=true` (set for product-api in `docker-compose.yml`). It is idempotent — it only inserts seed products whose name is missing and fills in `ImageUrl` where it is empty; admin-created or edited products are never overwritten.
 
 `scripts/GenerateEnvFillCli.ps1` turns those files into `az containerapp update` commands and copies them to the clipboard:
 
