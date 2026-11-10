@@ -33,6 +33,8 @@ await EComHostingExtensions.RunEComAsync(async () =>
 
     var app = builder.Build();
 
+    await app.MigrateDatabaseAsync<CartDbContext>();
+
     app.UseEComApiDefaults("ECom Cart API");
 
     await app.RunAsync();

@@ -59,6 +59,8 @@ await EComHostingExtensions.RunEComAsync(async () =>
 
     var app = builder.Build();
 
+    await app.MigrateDatabaseAsync<OrderDbContext>();
+
     app.UseEComApiDefaults("ECom Order API");
     app.MapHub<OrderHub>(OrderHubPath);
 

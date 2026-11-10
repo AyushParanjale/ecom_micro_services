@@ -37,6 +37,8 @@ await EComHostingExtensions.RunEComAsync(async () =>
 
     var app = builder.Build();
 
+    await app.MigrateDatabaseAsync<ProductDbContext>();
+
     if (app.Environment.IsDevelopment())
     {
         using var scope = app.Services.CreateScope();
