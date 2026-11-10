@@ -1,5 +1,27 @@
 # Ecommerce Microservices
 
+## Running in containers
+
+Each service has `src/<Project>/Dockerfile` plus a `Dockerfile.dockerignore` next to it. Build from this folder,
+because every image needs `ECom.Shared` and `Directory.Build.*`:
+
+```powershell
+docker build -f src/ECom.Order.Api/Dockerfile -t ecom-order-api .
+```
+
+`docker-compose.yml` runs the whole stack from `src/*/.env.production` (see below):
+
+```powershell
+docker compose up -d --build     # gateway :8000, auth :8001, product :8002, cart :8003, order :8004
+docker compose logs -f order-api
+docker compose down
+```
+
+- Compose overrides `ServiceUrls:*` with the in-network hosts (`http://product-api:8080`, ...) and mounts
+  `src/ECom.Gateway/ocelot.Docker.json` over the image's `ocelot.Production.json`.
+- When adding a gateway route, add it to `ocelot.json`, `ocelot.Production.json` and `ocelot.Docker.json`.
+- Azure SQL must allow this machine's public IP in its server firewall, otherwise the APIs restart in a loop with error 40615.
+
 ## Container environment scripts
 
 `scripts/Export-ContainerEnvironment.ps1` builds one Docker `--env-file` per service, written to

@@ -1,0 +1,99 @@
+# Runs every service in containers on one machine against the databases and
+# Service Bus configured in each src/<Service>/.env.production file.
+#   docker compose up -d --build
+#
+# Host ports: gateway 8000, auth 8001, product 8002, cart 8003, order 8004.
+# Containers reach each other by service name on port 8080, so the URLs in
+# `environment` override the deployed-host placeholders from the env files.
+
+x-service: &service
+  restart: unless-stopped
+  environment: &env
+    ASPNETCORE_ENVIRONMENT: Production
+    ASPNETCORE_HTTP_PORTS: "8080"
+
+services:
+  auth-api:
+    <<: *service
+    build:
+      context: .
+      dockerfile: src/ECom.Auth.Api/Dockerfile
+    image: ecom-auth-api
+    env_file:
+      - path: src/ECom.Auth.Api/.env.production
+        format: raw
+    ports:
+      - "8001:8080"
+
+  product-api:
+    <<: *service
+    build:
+      context: .
+      dockerfile: src/ECom.Product.Api/Dockerfile
+    image: ecom-product-api
+    env_file:
+      - path: src/ECom.Product.Api/.env.production
+        format: raw
+    ports:
+      - "8002:8080"
+
+  cart-api:
+    <<: *service
+    build:
+      context: .
+      dockerfile: src/ECom.Cart.Api/Dockerfile
+    image: ecom-cart-api
+    env_file:
+      - path: src/ECom.Cart.Api/.env.production
+        format: raw
+    environment:
+      <<: *env
+      ServiceUrls__ProductApi: http://product-api:8080
+    ports:
+      - "8003:8080"
+    depends_on:
+      - product-api
+
+  order-api:
+    <<: *service
+    build:
+      context: .
+      dockerfile: src/ECom.Order.Api/Dockerfile
+    image: ecom-order-api
+    env_file:
+      - path: src/ECom.Order.Api/.env.production
+        format: raw
+    environment:
+      <<: *env
+      ServiceUrls__CartApi: http://cart-api:8080
+      ServiceUrls__ProductApi: http://product-api:8080
+    ports:
+      - "8004:8080"
+    depends_on:
+      - cart-api
+      - product-api
+
+  gateway:
+    <<: *service
+    build:
+      context: .
+      dockerfile: src/ECom.Gateway/Dockerfile
+    image: ecom-gateway
+    env_file:
+      - path: src/ECom.Gateway/.env.production
+        format: raw
+    environment:
+      <<: *env
+      # Local frontend origins (Vite dev server and the frontend container).
+      Cors__AllowedOrigins__0: http://localhost:5173
+      Cors__AllowedOrigins__1: http://localhost:3000
+    # Production loads ocelot.Production.json; swap in the compose-network routes.
+    volumes:
+      - ./src/ECom.Gateway/ocelot.Docker.json:/app/ocelot.Production.json:ro
+    ports:
+      - "8000:8080"
+    depends_on:
+      - auth-api
+      - product-api
+      - cart-api
+      - order-api

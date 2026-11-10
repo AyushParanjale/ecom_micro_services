@@ -1,0 +1,34 @@
+# Used instead of a root .dockerignore when building src/ECom.Auth.Api/Dockerfile.
+# Only shared build props, the shared library, and this service belong in the build context.
+**
+!Directory.Build.props
+!Directory.Build.targets
+!src/ECom.Shared/
+!src/ECom.Shared/**
+!src/ECom.Auth.Api/
+!src/ECom.Auth.Api/**
+
+# Local outputs and editor settings.
+**/bin/
+**/obj/
+**/logs/
+**/TestResults/
+**/.vs/
+**/.vscode/
+**/*.user
+**/*.suo
+
+# Developer configuration and credentials must never enter an image.
+**/Properties/launchSettings.json
+**/appsettings.Development.json
+**/appsettings.Development.example.json
+**/appsettings.*.local.json
+**/.env
+**/.env.*
+**/secrets.json
+**/*secrets*.txt
+**/*.pfx
+**/*.p12
+**/*.pem
+**/*.key
+**/.git/
