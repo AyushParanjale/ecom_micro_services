@@ -22,6 +22,10 @@ docker compose down
 - When adding a gateway route, add it to `ocelot.json`, `ocelot.Production.json` and `ocelot.Docker.json`.
 - Azure SQL must allow this machine's public IP in its server firewall, otherwise the APIs restart in a loop with error 40615.
 
+`azure-pipelines.yml` builds and unit-tests the solution, then builds and pushes one image per service to the
+`ecomcr_connection` registry (`ecom-auth-api`, `ecom-product-api`, `ecom-cart-api`, `ecom-order-api`, `ecom-gateway`,
+tagged with the build ID and `latest`). Pull request builds skip the push.
+
 ## Container environment scripts
 
 `scripts/Export-ContainerEnvironment.ps1` builds one Docker `--env-file` per service, written to
