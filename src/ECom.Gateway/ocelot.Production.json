@@ -9,7 +9,7 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "ecom-auth-api.example.internal", "Port": 443
+          "Host": "ecom-auth.internal.ashyground-73772ac9.southindia.azurecontainerapps.io", "Port": 443
         }
       ]
     },
@@ -22,7 +22,7 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "ecom-auth-api.example.internal", "Port": 443
+          "Host": "ecom-auth.internal.ashyground-73772ac9.southindia.azurecontainerapps.io", "Port": 443
         }
       ]
     },
@@ -35,7 +35,7 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "ecom-auth-api.example.internal", "Port": 443
+          "Host": "ecom-auth.internal.ashyground-73772ac9.southindia.azurecontainerapps.io", "Port": 443
         }
       ]
     },
@@ -48,7 +48,7 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "ecom-auth-api.example.internal", "Port": 443
+          "Host": "ecom-auth.internal.ashyground-73772ac9.southindia.azurecontainerapps.io", "Port": 443
         }
       ]
     },
@@ -61,7 +61,7 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "ecom-auth-api.example.internal", "Port": 443
+          "Host": "ecom-auth.internal.ashyground-73772ac9.southindia.azurecontainerapps.io", "Port": 443
         }
       ],
       "AuthenticationOptions": {
@@ -79,7 +79,7 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "ecom-product-api.example.internal", "Port": 443
+          "Host": "ecom-product.internal.ashyground-73772ac9.southindia.azurecontainerapps.io", "Port": 443
         }
       ]
     },
@@ -92,7 +92,7 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "ecom-product-api.example.internal", "Port": 443
+          "Host": "ecom-product.internal.ashyground-73772ac9.southindia.azurecontainerapps.io", "Port": 443
         }
       ],
       "AuthenticationOptions": {
@@ -110,7 +110,7 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "ecom-product-api.example.internal", "Port": 443
+          "Host": "ecom-product.internal.ashyground-73772ac9.southindia.azurecontainerapps.io", "Port": 443
         }
       ]
     },
@@ -124,7 +124,7 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "ecom-product-api.example.internal", "Port": 443
+          "Host": "ecom-product.internal.ashyground-73772ac9.southindia.azurecontainerapps.io", "Port": 443
         }
       ],
       "AuthenticationOptions": {
@@ -142,7 +142,7 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "ecom-cart-api.example.internal", "Port": 443
+          "Host": "ecom-cart.internal.ashyground-73772ac9.southindia.azurecontainerapps.io", "Port": 443
         }
       ],
       "AuthenticationOptions": {
@@ -160,7 +160,7 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "ecom-cart-api.example.internal", "Port": 443
+          "Host": "ecom-cart.internal.ashyground-73772ac9.southindia.azurecontainerapps.io", "Port": 443
         }
       ],
       "AuthenticationOptions": {
@@ -179,7 +179,7 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "ecom-cart-api.example.internal", "Port": 443
+          "Host": "ecom-cart.internal.ashyground-73772ac9.southindia.azurecontainerapps.io", "Port": 443
         }
       ],
       "AuthenticationOptions": {
@@ -197,7 +197,7 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "ecom-order-api.example.internal", "Port": 443
+          "Host": "ecom-order.internal.ashyground-73772ac9.southindia.azurecontainerapps.io", "Port": 443
         }
       ],
       "AuthenticationOptions": {
@@ -215,7 +215,7 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "ecom-order-api.example.internal", "Port": 443
+          "Host": "ecom-order.internal.ashyground-73772ac9.southindia.azurecontainerapps.io", "Port": 443
         }
       ],
       "AuthenticationOptions": {
@@ -233,7 +233,7 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "ecom-order-api.example.internal", "Port": 443
+          "Host": "ecom-order.internal.ashyground-73772ac9.southindia.azurecontainerapps.io", "Port": 443
         }
       ],
       "AuthenticationOptions": {
@@ -251,7 +251,7 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "ecom-order-api.example.internal", "Port": 443
+          "Host": "ecom-order.internal.ashyground-73772ac9.southindia.azurecontainerapps.io", "Port": 443
         }
       ],
       "AuthenticationOptions": {
@@ -269,7 +269,7 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "ecom-order-api.example.internal", "Port": 443
+          "Host": "ecom-order.internal.ashyground-73772ac9.southindia.azurecontainerapps.io", "Port": 443
         }
       ],
       "AuthenticationOptions": {
@@ -287,7 +287,7 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "ecom-order-api.example.internal", "Port": 443
+          "Host": "ecom-order.internal.ashyground-73772ac9.southindia.azurecontainerapps.io", "Port": 443
         }
       ],
       "AuthenticationOptions": {
@@ -305,7 +305,7 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
-          "Host": "ecom-order-api.example.internal", "Port": 443
+          "Host": "ecom-order.internal.ashyground-73772ac9.southindia.azurecontainerapps.io", "Port": 443
         }
       ]
     },
@@ -318,12 +318,12 @@
       "DownstreamScheme": "wss",
       "DownstreamHostAndPorts": [
         {
-          "Host": "ecom-order-api.example.internal", "Port": 443
+          "Host": "ecom-order.internal.ashyground-73772ac9.southindia.azurecontainerapps.io", "Port": 443
         }
       ]
     }
   ],
   "GlobalConfiguration": {
-    "BaseUrl": "https://ecom-gateway.example.com"
+    "BaseUrl": "https://ecom-gateway.ashyground-73772ac9.southindia.azurecontainerapps.io"
   }
 }

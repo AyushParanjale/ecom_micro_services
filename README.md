@@ -26,6 +26,8 @@ docker compose down
 `ecomcr_connection` registry (`ecom-auth-api`, `ecom-product-api`, `ecom-cart-api`, `ecom-order-api`, `ecom-gateway`,
 tagged with the build ID and `latest`). Pull request builds skip the push.
 
+The deployed container app names and URLs are listed in [AZURE_ENDPOINTS.md](AZURE_ENDPOINTS.md).
+
 ## Container environment scripts
 
 `scripts/Export-ContainerEnvironment.ps1` builds one Docker `--env-file` per service, written to

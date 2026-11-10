@@ -12,19 +12,19 @@ $root = Split-Path $PSScriptRoot -Parent
 
 # Name matches the Azure host/container app name (see ocelot.Production.json).
 $catalog = [ordered]@{
-    Auth    = @{ Project = 'ECom.Auth.Api'; Name = 'auth-api'; HasDatabase = $true }
-    Product = @{ Project = 'ECom.Product.Api'; Name = 'product-api'; HasDatabase = $true }
-    Cart    = @{ Project = 'ECom.Cart.Api'; Name = 'cart-api'; HasDatabase = $true }
-    Order   = @{ Project = 'ECom.Order.Api'; Name = 'order-api'; HasDatabase = $true }
+    Auth    = @{ Project = 'ECom.Auth.Api'; Name = 'auth'; HasDatabase = $true }
+    Product = @{ Project = 'ECom.Product.Api'; Name = 'product'; HasDatabase = $true }
+    Cart    = @{ Project = 'ECom.Cart.Api'; Name = 'cart'; HasDatabase = $true }
+    Order   = @{ Project = 'ECom.Order.Api'; Name = 'order'; HasDatabase = $true }
     Gateway = @{ Project = 'ECom.Gateway'; Name = 'gateway'; HasDatabase = $false }
 }
 
 # Production base URLs for ServiceUrls:{key}; keep in step with ocelot.Production.json.
 $productionServiceUrls = @{
-    AuthApi    = 'https://ecom-auth-api.example.internal'
-    ProductApi = 'https://ecom-product-api.example.internal'
-    CartApi    = 'https://ecom-cart-api.example.internal'
-    OrderApi   = 'https://ecom-order-api.example.internal'
+    AuthApi    = 'https://ecom-auth.internal.ashyground-73772ac9.southindia.azurecontainerapps.io'
+    ProductApi = 'https://ecom-product.internal.ashyground-73772ac9.southindia.azurecontainerapps.io'
+    CartApi    = 'https://ecom-cart.internal.ashyground-73772ac9.southindia.azurecontainerapps.io'
+    OrderApi   = 'https://ecom-order.internal.ashyground-73772ac9.southindia.azurecontainerapps.io'
 }
 
 $Service = @($Service | ForEach-Object { $_ -split ',' } | ForEach-Object { (Get-Culture).TextInfo.ToTitleCase($_.Trim().ToLowerInvariant()) })
@@ -138,7 +138,7 @@ foreach ($serviceName in $selected) {
         }
         if ($values.Keys | Where-Object { $_ -like 'Cors__AllowedOrigins__*' }) {
             Remove-ConfigurationSection $values 'Cors__AllowedOrigins'
-            $values['Cors__AllowedOrigins__0'] = 'https://REPLACE_FRONTEND_ORIGIN'
+            $values['Cors__AllowedOrigins__0'] = 'https://ecom-frontend.ashyground-73772ac9.southindia.azurecontainerapps.io'
         }
     }
 

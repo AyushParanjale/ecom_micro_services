@@ -10,7 +10,7 @@ param(
     [Parameter(Mandatory = $true, ParameterSetName = 'ByFile')]
     [string]$EnvFile,
 
-    # Convention mode: src/<Project>/.env.<target> -> <prefix><name>, e.g. src/ECom.Cart.Api/.env.production -> ecom-cart-api.
+    # Convention mode: src/<Project>/.env.<target> -> <prefix><name>, e.g. src/ECom.Cart.Api/.env.production -> ecom-cart.
     [Parameter(ParameterSetName = 'ByService')]
     [ValidatePattern('^(All|Auth|Product|Cart|Order|Gateway)(,(All|Auth|Product|Cart|Order|Gateway))*$')]
     [string[]]$Service = @('All'),
@@ -61,10 +61,10 @@ if ($PSCmdlet.ParameterSetName -eq 'ByFile') {
 else {
     $root = Split-Path $PSScriptRoot -Parent
     $names = [ordered]@{
-        Auth    = @{ Project = 'ECom.Auth.Api'; Name = 'auth-api' }
-        Product = @{ Project = 'ECom.Product.Api'; Name = 'product-api' }
-        Cart    = @{ Project = 'ECom.Cart.Api'; Name = 'cart-api' }
-        Order   = @{ Project = 'ECom.Order.Api'; Name = 'order-api' }
+        Auth    = @{ Project = 'ECom.Auth.Api'; Name = 'auth' }
+        Product = @{ Project = 'ECom.Product.Api'; Name = 'product' }
+        Cart    = @{ Project = 'ECom.Cart.Api'; Name = 'cart' }
+        Order   = @{ Project = 'ECom.Order.Api'; Name = 'order' }
         Gateway = @{ Project = 'ECom.Gateway'; Name = 'gateway' }
     }
     $Service = @($Service | ForEach-Object { $_ -split ',' } | ForEach-Object { (Get-Culture).TextInfo.ToTitleCase($_.Trim().ToLowerInvariant()) })
